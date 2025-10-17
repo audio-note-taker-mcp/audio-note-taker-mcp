@@ -70,23 +70,27 @@ export async function transcribeAudio(audioData: string, mimeType?: string) {
 }
 
 // Tool 2: Extract Tasks
-export async function extractTasks(transcript: string, context?: string) {
+export async function extractTasks(
+  transcript: string,
+  previousState?: { tasks?: any[]; events?: any[]; notes?: any[] },
+  context?: string
+) {
   // Fallback mode if Anthropic is not configured or has credit issues
   if (!anthropic) {
     console.warn("Anthropic API key not configured, using fallback extraction");
-    return useFallbackExtraction(transcript);
+    return useFallbackExtraction(transcript, previousState);
   }
 
   try {
-    const systemPrompt = getTaskExtractionPrompt(context);
+    const systemPrompt = getTaskExtractionPrompt(previousState, context);
 
     const message = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
+      max_tokens: 2048, // Increased for iterative sessions with more content
       messages: [
         {
           role: "user",
-          content: `Transcript: ${transcript}`,
+          content: `NEW Transcript: ${transcript}`,
         },
       ],
       system: systemPrompt,
@@ -105,17 +109,21 @@ export async function extractTasks(transcript: string, context?: string) {
     // If Anthropic API fails due to credits, use fallback
     if (error.message.includes("credit balance") || error.message.includes("invalid_request_error")) {
       console.warn("Anthropic API credit issue, using fallback extraction:", error.message);
-      return useFallbackExtraction(transcript);
+      return useFallbackExtraction(transcript, previousState);
     }
     throw new Error(`Task extraction error: ${error.message}`);
   }
 }
 
 // Simple fallback extraction using pattern matching
-function useFallbackExtraction(transcript: string) {
-  const tasks: any[] = [];
-  const events: any[] = [];
-  const notes: any[] = [];
+function useFallbackExtraction(
+  transcript: string,
+  previousState?: { tasks?: any[]; events?: any[]; notes?: any[] }
+) {
+  // Start with previous state if it exists
+  const tasks: any[] = previousState?.tasks ? [...previousState.tasks] : [];
+  const events: any[] = previousState?.events ? [...previousState.events] : [];
+  const notes: any[] = previousState?.notes ? [...previousState.notes] : [];
 
   // Basic pattern matching for common phrases
   const lines = transcript.split(/[.!?]+/).filter(line => line.trim().length > 0);
@@ -150,7 +158,7 @@ function useFallbackExtraction(transcript: string) {
     }
   }
 
-  // If nothing extracted, create a generic note
+  // If nothing extracted and no previous state, create a generic note
   if (tasks.length === 0 && events.length === 0 && notes.length === 0) {
     notes.push({
       content: transcript,
@@ -191,38 +199,91 @@ export async function saveNote(
 
     const noteJson = JSON.stringify(noteData, null, 2);
 
-    // Try S3 first, fallback to local filesystem
-    if (s3Client && process.env.AWS_S3_BUCKET) {
-      const key = `notes/${noteId}.json`;
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET,
-          Key: key,
-          Body: noteJson,
-          ContentType: "application/json",
-        })
-      );
+    // Check S3 configuration
+    const forceS3 = process.env.FORCE_S3_UPLOAD === "true";
+    const useLocalStorage = process.env.USE_LOCAL_STORAGE === "true";
+    const hasS3Config = !!(s3Client && process.env.AWS_S3_BUCKET);
 
-      return {
-        note_id: noteId,
-        storage_url: `s3://${process.env.AWS_S3_BUCKET}/${key}`,
-        created_at: timestamp,
-        success: true,
-      };
-    } else {
-      // Fallback to local filesystem
-      const notesDir = join(process.cwd(), "data", "notes");
-      await mkdir(notesDir, { recursive: true });
-      const filePath = join(notesDir, `${noteId}.json`);
-      await writeFile(filePath, noteJson);
+    console.log("Storage Configuration Check:", {
+      hasS3Client: !!s3Client,
+      hasBucketName: !!process.env.AWS_S3_BUCKET,
+      bucketName: process.env.AWS_S3_BUCKET,
+      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION,
+      forceS3: forceS3,
+      useLocalStorage: useLocalStorage,
+    });
 
-      return {
-        note_id: noteId,
-        storage_url: `file://${filePath}`,
-        created_at: timestamp,
-        success: true,
-      };
+    // Honor USE_LOCAL_STORAGE flag
+    if (useLocalStorage) {
+      console.log("USE_LOCAL_STORAGE is true, skipping S3 and using local storage");
     }
+
+    // Try S3 first, fallback to local filesystem
+    if (hasS3Config && !useLocalStorage) {
+      try {
+        const key = `notes/${noteId}.json`;
+        console.log(`Attempting to upload to S3: s3://${process.env.AWS_S3_BUCKET}/${key}`);
+
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: key,
+            Body: noteJson,
+            ContentType: "application/json",
+          })
+        );
+
+        console.log(`✅ Successfully uploaded to S3: s3://${process.env.AWS_S3_BUCKET}/${key}`);
+
+        return {
+          note_id: noteId,
+          storage_url: `s3://${process.env.AWS_S3_BUCKET}/${key}`,
+          created_at: timestamp,
+          success: true,
+          storage_type: "s3",
+        };
+      } catch (s3Error: any) {
+        console.error("❌ S3 upload failed:", s3Error.message);
+        console.error("S3 Error details:", {
+          name: s3Error.name,
+          code: s3Error.code,
+          message: s3Error.message,
+        });
+
+        // If FORCE_S3_UPLOAD is true, throw the error instead of falling back
+        if (forceS3) {
+          console.error("FORCE_S3_UPLOAD is true, not falling back to local storage");
+          throw new Error(`S3 upload failed (FORCE_S3_UPLOAD=true): ${s3Error.message}`);
+        }
+
+        // Fall through to local storage
+        console.log("Falling back to local file storage...");
+      }
+    } else {
+      if (hasS3Config) {
+        console.log("S3 configured but USE_LOCAL_STORAGE is true, using local file storage");
+      } else {
+        console.log("S3 not configured, using local file storage");
+      }
+    }
+
+    // Fallback to local filesystem
+    const notesDir = join(process.cwd(), "data", "notes");
+    await mkdir(notesDir, { recursive: true });
+    const filePath = join(notesDir, `${noteId}.json`);
+    await writeFile(filePath, noteJson);
+
+    console.log(`✅ Successfully saved to local filesystem: ${filePath}`);
+
+    return {
+      note_id: noteId,
+      storage_url: `file://${filePath}`,
+      created_at: timestamp,
+      success: true,
+      storage_type: "local",
+    };
   } catch (error: any) {
     throw new Error(`Save note error: ${error.message}`);
   }

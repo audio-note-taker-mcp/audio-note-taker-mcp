@@ -37,6 +37,20 @@ export default function Home() {
   const [results, setResults] = useState<ProcessedResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Session state: accumulated results across multiple recordings
+  const [sessionState, setSessionState] = useState<{
+    tasks: any[];
+    events: any[];
+    notes: any[];
+    transcripts: string[];
+  }>({
+    tasks: [],
+    events: [],
+    notes: [],
+    transcripts: [],
+  });
+  const [recordingCount, setRecordingCount] = useState(0);
+
   const handleFileSelect = (
     data: string,
     mimeType: string,
@@ -61,6 +75,12 @@ export default function Home() {
           audioData: data,
           mimeType: mimeType,
           fileName: "recording.webm",
+          // Pass previous session state for iterative merging
+          previousState: {
+            tasks: sessionState.tasks,
+            events: sessionState.events,
+            notes: sessionState.notes,
+          },
         }),
       });
 
@@ -82,6 +102,15 @@ export default function Home() {
 
       setProcessingStep("complete");
       setResults(responseData);
+
+      // Update session state with merged results
+      setSessionState({
+        tasks: responseData.tasks || [],
+        events: responseData.events || [],
+        notes: responseData.notes || [],
+        transcripts: [...sessionState.transcripts, responseData.transcript],
+      });
+      setRecordingCount((prev) => prev + 1);
     } catch (err: any) {
       console.error("Processing error:", err);
       setError(err.message || "An error occurred while processing the audio");
@@ -104,6 +133,12 @@ export default function Home() {
           audioData: audioData.data,
           mimeType: audioData.mimeType,
           fileName: audioData.fileName,
+          // Pass previous session state for iterative merging
+          previousState: {
+            tasks: sessionState.tasks,
+            events: sessionState.events,
+            notes: sessionState.notes,
+          },
         }),
       });
 
@@ -125,6 +160,15 @@ export default function Home() {
 
       setProcessingStep("complete");
       setResults(data);
+
+      // Update session state with merged results
+      setSessionState({
+        tasks: data.tasks || [],
+        events: data.events || [],
+        notes: data.notes || [],
+        transcripts: [...sessionState.transcripts, data.transcript],
+      });
+      setRecordingCount((prev) => prev + 1);
     } catch (err: any) {
       console.error("Processing error:", err);
       setError(err.message || "An error occurred while processing the audio");
@@ -137,6 +181,27 @@ export default function Home() {
     setProcessingStep("idle");
     setResults(null);
     setError(null);
+  };
+
+  const continueRecording = () => {
+    setAudioData(null);
+    setProcessingStep("idle");
+    setError(null);
+    // Keep results and session state for next recording
+  };
+
+  const resetSession = () => {
+    setAudioData(null);
+    setProcessingStep("idle");
+    setResults(null);
+    setError(null);
+    setSessionState({
+      tasks: [],
+      events: [],
+      notes: [],
+      transcripts: [],
+    });
+    setRecordingCount(0);
   };
 
   const getStepMessage = () => {
@@ -177,6 +242,21 @@ export default function Home() {
         {/* Main Content */}
         {processingStep === "idle" || processingStep === "error" ? (
           <div className="space-y-6">
+            {/* Active Session Indicator */}
+            {recordingCount > 0 && (
+              <div className="bg-purple-500/20 border border-purple-400/50 rounded-xl p-4 text-center">
+                <p className="text-purple-100 font-semibold">
+                  📊 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                </p>
+                <button
+                  onClick={resetSession}
+                  className="mt-2 text-sm text-purple-300 hover:text-purple-200 underline"
+                >
+                  Reset Session
+                </button>
+              </div>
+            )}
+
             {/* Input Method Toggle */}
             <div className="flex justify-center gap-4 mb-6">
               <button
@@ -310,15 +390,22 @@ export default function Home() {
           </div>
         ) : processingStep === "complete" && results ? (
           <div className="space-y-6">
-            {/* Success Message */}
+            {/* Session Info & Success Message */}
             <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-6 text-center">
               <div className="text-5xl mb-2">🎉</div>
               <h2 className="text-2xl font-bold text-white mb-2">
                 Processing Complete!
               </h2>
-              <p className="text-green-100">
+              <p className="text-green-100 mb-3">
                 Your audio note has been processed and saved
               </p>
+              {recordingCount > 0 && (
+                <div className="inline-block px-4 py-2 bg-purple-500/30 rounded-lg border border-purple-400/50">
+                  <p className="text-sm text-purple-100">
+                    Session Recording #{recordingCount} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Results */}
@@ -331,12 +418,18 @@ export default function Home() {
             />
 
             {/* Action Buttons */}
-            <div className="text-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={reset}
+                onClick={continueRecording}
                 className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
               >
-                Process Another Note
+                ➕ Add Another Recording
+              </button>
+              <button
+                onClick={resetSession}
+                className="px-8 py-4 bg-white/10 hover:bg-white/20 border-2 border-purple-400/50 hover:border-purple-400 text-white font-semibold text-lg rounded-xl transition-all"
+              >
+                🔄 Start New Session
               </button>
             </div>
           </div>
