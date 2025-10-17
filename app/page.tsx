@@ -5,40 +5,12 @@ import AudioRecorder from "./components/AudioRecorder";
 import FileUploader from "./components/FileUploader";
 import ResultsDisplay from "./components/ResultsDisplay";
 import MarkdownDisplay from "./components/MarkdownDisplay";
-
-type ProcessingStep =
-  | "idle"
-  | "transcribing"
-  | "extracting"
-  | "saving"
-  | "creating"
-  | "complete"
-  | "error";
-
-type OutputMode = "json" | "markdown";
-
-interface ProcessedResults {
-  transcript: string;
-  tasks: any[];
-  events: any[];
-  notes: any[];
-  storageInfo?: {
-    note_id: string;
-    storage_url: string;
-    created_at: string;
-  };
-}
-
-interface MarkdownResults {
-  transcript: string;
-  markdown: string;
-  storageInfo?: {
-    note_id: string;
-    storage_url: string;
-    created_at: string;
-    storage_type?: string;
-  };
-}
+import type {
+  ProcessingStep,
+  OutputMode,
+  ProcessedResults,
+  MarkdownResults,
+} from "./types";
 
 export default function Home() {
   const [outputMode, setOutputMode] = useState<OutputMode>("markdown");
@@ -50,7 +22,8 @@ export default function Home() {
   } | null>(null);
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [results, setResults] = useState<ProcessedResults | null>(null);
-  const [markdownResults, setMarkdownResults] = useState<MarkdownResults | null>(null);
+  const [markdownResults, setMarkdownResults] =
+    useState<MarkdownResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Session state: accumulated results across multiple recordings (JSON mode)
@@ -367,11 +340,17 @@ export default function Home() {
               <div className="bg-purple-500/20 border border-purple-400/50 rounded-xl p-4 text-center">
                 {outputMode === "json" ? (
                   <p className="text-purple-100 font-semibold">
-                    📊 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                    📊 Active Session: {recordingCount} recording
+                    {recordingCount !== 1 ? "s" : ""} •{" "}
+                    {sessionState.tasks.length} tasks •{" "}
+                    {sessionState.events.length} events •{" "}
+                    {sessionState.notes.length} notes
                   </p>
                 ) : (
                   <p className="text-purple-100 font-semibold">
-                    📝 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {markdownDocument.length} characters
+                    📝 Active Session: {recordingCount} recording
+                    {recordingCount !== 1 ? "s" : ""} •{" "}
+                    {markdownDocument.length} characters
                   </p>
                 )}
                 <button
@@ -529,11 +508,15 @@ export default function Home() {
                 <div className="inline-block px-4 py-2 bg-purple-500/30 rounded-lg border border-purple-400/50">
                   {outputMode === "json" && results ? (
                     <p className="text-sm text-purple-100">
-                      Session Recording #{recordingCount} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                      Session Recording #{recordingCount} •{" "}
+                      {sessionState.tasks.length} tasks •{" "}
+                      {sessionState.events.length} events •{" "}
+                      {sessionState.notes.length} notes
                     </p>
                   ) : (
                     <p className="text-sm text-purple-100">
-                      Session Recording #{recordingCount} • {markdownDocument.length} characters
+                      Session Recording #{recordingCount} •{" "}
+                      {markdownDocument.length} characters
                     </p>
                   )}
                 </div>
