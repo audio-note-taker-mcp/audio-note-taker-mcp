@@ -4,6 +4,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { getTaskExtractionPrompt } from "./prompts/task-extraction";
+import { getMarkdownUpdatePrompt } from "./prompts/markdown-update";
 
 // Initialize clients
 const deepgram = process.env.DEEPGRAM_API_KEY
@@ -113,6 +114,81 @@ export async function extractTasks(
     }
     throw new Error(`Task extraction error: ${error.message}`);
   }
+}
+
+// Tool 2b: Update Markdown Document
+export async function updateMarkdownDocument(
+  transcript: string,
+  currentMarkdown?: string,
+  context?: string
+) {
+  // Fallback mode if Anthropic is not configured
+  if (!anthropic) {
+    console.warn("Anthropic API key not configured, using simple append fallback");
+    return useFallbackMarkdownUpdate(transcript, currentMarkdown);
+  }
+
+  try {
+    const systemPrompt = getMarkdownUpdatePrompt(currentMarkdown, context);
+
+    const message = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 4096, // Increased for larger markdown documents
+      messages: [
+        {
+          role: "user",
+          content: `NEW Transcript: ${transcript}`,
+        },
+      ],
+      system: systemPrompt,
+    });
+
+    const updatedMarkdown =
+      message.content[0].type === "text" ? message.content[0].text : "";
+
+    return {
+      markdown: updatedMarkdown.trim(),
+      success: true,
+    };
+  } catch (error: any) {
+    // If Anthropic API fails due to credits, use fallback
+    if (error.message.includes("credit balance") || error.message.includes("invalid_request_error")) {
+      console.warn("Anthropic API credit issue, using fallback markdown update:", error.message);
+      return useFallbackMarkdownUpdate(transcript, currentMarkdown);
+    }
+    throw new Error(`Markdown update error: ${error.message}`);
+  }
+}
+
+// Simple fallback markdown update (append mode)
+function useFallbackMarkdownUpdate(
+  transcript: string,
+  currentMarkdown?: string
+) {
+  const timestamp = new Date().toLocaleString();
+
+  if (!currentMarkdown || currentMarkdown.trim().length === 0) {
+    // First entry - create initial structure
+    return {
+      markdown: `# My Notes
+
+## Notes
+- ${transcript} _(${timestamp})_`,
+      success: true,
+      fallback: true,
+    };
+  }
+
+  // Append to existing markdown
+  const updatedMarkdown = `${currentMarkdown}
+
+- ${transcript} _(${timestamp})_`;
+
+  return {
+    markdown: updatedMarkdown,
+    success: true,
+    fallback: true,
+  };
 }
 
 // Simple fallback extraction using pattern matching
@@ -286,6 +362,126 @@ export async function saveNote(
     };
   } catch (error: any) {
     throw new Error(`Save note error: ${error.message}`);
+  }
+}
+
+// Tool 3b: Save Markdown Note
+export async function saveMarkdownNote(
+  markdown: string,
+  transcript: string,
+  audioUrl?: string
+) {
+  try {
+    const noteId = `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = new Date().toISOString();
+
+    // Store metadata separately for compatibility
+    const metadata = {
+      id: noteId,
+      timestamp,
+      transcript,
+      audio_url: audioUrl,
+      format: "markdown",
+    };
+
+    // Check S3 configuration
+    const forceS3 = process.env.FORCE_S3_UPLOAD === "true";
+    const useLocalStorage = process.env.USE_LOCAL_STORAGE === "true";
+    const hasS3Config = !!(s3Client && process.env.AWS_S3_BUCKET);
+
+    console.log("Storage Configuration Check (Markdown):", {
+      hasS3Client: !!s3Client,
+      hasBucketName: !!process.env.AWS_S3_BUCKET,
+      bucketName: process.env.AWS_S3_BUCKET,
+      forceS3: forceS3,
+      useLocalStorage: useLocalStorage,
+    });
+
+    // Honor USE_LOCAL_STORAGE flag
+    if (useLocalStorage) {
+      console.log("USE_LOCAL_STORAGE is true, skipping S3 and using local storage");
+    }
+
+    // Try S3 first, fallback to local filesystem
+    if (hasS3Config && !useLocalStorage) {
+      try {
+        const markdownKey = `notes/${noteId}.md`;
+        const metadataKey = `notes/${noteId}.meta.json`;
+
+        console.log(`Attempting to upload to S3: s3://${process.env.AWS_S3_BUCKET}/${markdownKey}`);
+
+        // Upload markdown file
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: markdownKey,
+            Body: markdown,
+            ContentType: "text/markdown",
+          })
+        );
+
+        // Upload metadata file
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: process.env.AWS_S3_BUCKET,
+            Key: metadataKey,
+            Body: JSON.stringify(metadata, null, 2),
+            ContentType: "application/json",
+          })
+        );
+
+        console.log(`✅ Successfully uploaded to S3: s3://${process.env.AWS_S3_BUCKET}/${markdownKey}`);
+
+        return {
+          note_id: noteId,
+          storage_url: `s3://${process.env.AWS_S3_BUCKET}/${markdownKey}`,
+          created_at: timestamp,
+          success: true,
+          storage_type: "s3",
+          format: "markdown",
+        };
+      } catch (s3Error: any) {
+        console.error("❌ S3 upload failed:", s3Error.message);
+
+        // If FORCE_S3_UPLOAD is true, throw the error instead of falling back
+        if (forceS3) {
+          console.error("FORCE_S3_UPLOAD is true, not falling back to local storage");
+          throw new Error(`S3 upload failed (FORCE_S3_UPLOAD=true): ${s3Error.message}`);
+        }
+
+        // Fall through to local storage
+        console.log("Falling back to local file storage...");
+      }
+    } else {
+      if (hasS3Config) {
+        console.log("S3 configured but USE_LOCAL_STORAGE is true, using local file storage");
+      } else {
+        console.log("S3 not configured, using local file storage");
+      }
+    }
+
+    // Fallback to local filesystem
+    const notesDir = join(process.cwd(), "data", "notes");
+    await mkdir(notesDir, { recursive: true });
+
+    const markdownPath = join(notesDir, `${noteId}.md`);
+    const metadataPath = join(notesDir, `${noteId}.meta.json`);
+
+    await writeFile(markdownPath, markdown);
+    await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+    console.log(`✅ Successfully saved to local filesystem: ${markdownPath}`);
+
+    return {
+      note_id: noteId,
+      storage_url: `file://${markdownPath}`,
+      created_at: timestamp,
+      success: true,
+      storage_type: "local",
+      format: "markdown",
+    };
+  } catch (error: any) {
+    throw new Error(`Save markdown note error: ${error.message}`);
   }
 }
 

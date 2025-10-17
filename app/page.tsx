@@ -4,6 +4,7 @@ import { useState } from "react";
 import AudioRecorder from "./components/AudioRecorder";
 import FileUploader from "./components/FileUploader";
 import ResultsDisplay from "./components/ResultsDisplay";
+import MarkdownDisplay from "./components/MarkdownDisplay";
 
 type ProcessingStep =
   | "idle"
@@ -13,6 +14,8 @@ type ProcessingStep =
   | "creating"
   | "complete"
   | "error";
+
+type OutputMode = "json" | "markdown";
 
 interface ProcessedResults {
   transcript: string;
@@ -26,7 +29,19 @@ interface ProcessedResults {
   };
 }
 
+interface MarkdownResults {
+  transcript: string;
+  markdown: string;
+  storageInfo?: {
+    note_id: string;
+    storage_url: string;
+    created_at: string;
+    storage_type?: string;
+  };
+}
+
 export default function Home() {
+  const [outputMode, setOutputMode] = useState<OutputMode>("markdown");
   const [inputMethod, setInputMethod] = useState<"record" | "upload">("record");
   const [audioData, setAudioData] = useState<{
     data: string;
@@ -35,9 +50,10 @@ export default function Home() {
   } | null>(null);
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [results, setResults] = useState<ProcessedResults | null>(null);
+  const [markdownResults, setMarkdownResults] = useState<MarkdownResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Session state: accumulated results across multiple recordings
+  // Session state: accumulated results across multiple recordings (JSON mode)
   const [sessionState, setSessionState] = useState<{
     tasks: any[];
     events: any[];
@@ -49,6 +65,10 @@ export default function Home() {
     notes: [],
     transcripts: [],
   });
+
+  // Markdown session state (Markdown mode)
+  const [markdownDocument, setMarkdownDocument] = useState<string>("");
+
   const [recordingCount, setRecordingCount] = useState(0);
 
   const handleFileSelect = (
@@ -68,49 +88,82 @@ export default function Home() {
     setProcessingStep("transcribing");
 
     try {
-      const response = await fetch("/api/process-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audioData: data,
-          mimeType: mimeType,
-          fileName: "recording.webm",
-          // Pass previous session state for iterative merging
-          previousState: {
-            tasks: sessionState.tasks,
-            events: sessionState.events,
-            notes: sessionState.notes,
-          },
-        }),
-      });
+      if (outputMode === "markdown") {
+        // Markdown mode processing
+        const response = await fetch("/api/process-audio-markdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioData: data,
+            mimeType: mimeType,
+            fileName: "recording.webm",
+            currentMarkdown: markdownDocument,
+          }),
+        });
 
-      const responseData = await response.json();
+        const responseData = await response.json();
 
-      if (!response.ok || !responseData.success) {
-        throw new Error(responseData.error || "Processing failed");
+        if (!response.ok || !responseData.success) {
+          throw new Error(responseData.error || "Processing failed");
+        }
+
+        // Simulate step progression for UX
+        setProcessingStep("extracting");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("saving");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("complete");
+        setMarkdownResults(responseData);
+        setMarkdownDocument(responseData.markdown);
+        setRecordingCount((prev) => prev + 1);
+      } else {
+        // JSON mode processing (original)
+        const response = await fetch("/api/process-audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioData: data,
+            mimeType: mimeType,
+            fileName: "recording.webm",
+            // Pass previous session state for iterative merging
+            previousState: {
+              tasks: sessionState.tasks,
+              events: sessionState.events,
+              notes: sessionState.notes,
+            },
+          }),
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok || !responseData.success) {
+          throw new Error(responseData.error || "Processing failed");
+        }
+
+        // Simulate step progression for UX
+        setProcessingStep("extracting");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("saving");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("creating");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("complete");
+        setResults(responseData);
+
+        // Update session state with merged results
+        setSessionState({
+          tasks: responseData.tasks || [],
+          events: responseData.events || [],
+          notes: responseData.notes || [],
+          transcripts: [...sessionState.transcripts, responseData.transcript],
+        });
+        setRecordingCount((prev) => prev + 1);
       }
-
-      // Simulate step progression for UX
-      setProcessingStep("extracting");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("saving");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("creating");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("complete");
-      setResults(responseData);
-
-      // Update session state with merged results
-      setSessionState({
-        tasks: responseData.tasks || [],
-        events: responseData.events || [],
-        notes: responseData.notes || [],
-        transcripts: [...sessionState.transcripts, responseData.transcript],
-      });
-      setRecordingCount((prev) => prev + 1);
     } catch (err: any) {
       console.error("Processing error:", err);
       setError(err.message || "An error occurred while processing the audio");
@@ -124,51 +177,85 @@ export default function Home() {
     setProcessingStep("transcribing");
     setError(null);
     setResults(null);
+    setMarkdownResults(null);
 
     try {
-      const response = await fetch("/api/process-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audioData: audioData.data,
-          mimeType: audioData.mimeType,
-          fileName: audioData.fileName,
-          // Pass previous session state for iterative merging
-          previousState: {
-            tasks: sessionState.tasks,
-            events: sessionState.events,
-            notes: sessionState.notes,
-          },
-        }),
-      });
+      if (outputMode === "markdown") {
+        // Markdown mode processing
+        const response = await fetch("/api/process-audio-markdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioData: audioData.data,
+            mimeType: audioData.mimeType,
+            fileName: audioData.fileName,
+            currentMarkdown: markdownDocument,
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Processing failed");
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Processing failed");
+        }
+
+        // Simulate step progression for UX
+        setProcessingStep("extracting");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("saving");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("complete");
+        setMarkdownResults(data);
+        setMarkdownDocument(data.markdown);
+        setRecordingCount((prev) => prev + 1);
+      } else {
+        // JSON mode processing (original)
+        const response = await fetch("/api/process-audio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioData: audioData.data,
+            mimeType: audioData.mimeType,
+            fileName: audioData.fileName,
+            // Pass previous session state for iterative merging
+            previousState: {
+              tasks: sessionState.tasks,
+              events: sessionState.events,
+              notes: sessionState.notes,
+            },
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Processing failed");
+        }
+
+        // Simulate step progression for UX
+        setProcessingStep("extracting");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("saving");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("creating");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        setProcessingStep("complete");
+        setResults(data);
+
+        // Update session state with merged results
+        setSessionState({
+          tasks: data.tasks || [],
+          events: data.events || [],
+          notes: data.notes || [],
+          transcripts: [...sessionState.transcripts, data.transcript],
+        });
+        setRecordingCount((prev) => prev + 1);
       }
-
-      // Simulate step progression for UX
-      setProcessingStep("extracting");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("saving");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("creating");
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setProcessingStep("complete");
-      setResults(data);
-
-      // Update session state with merged results
-      setSessionState({
-        tasks: data.tasks || [],
-        events: data.events || [],
-        notes: data.notes || [],
-        transcripts: [...sessionState.transcripts, data.transcript],
-      });
-      setRecordingCount((prev) => prev + 1);
     } catch (err: any) {
       console.error("Processing error:", err);
       setError(err.message || "An error occurred while processing the audio");
@@ -180,6 +267,7 @@ export default function Home() {
     setAudioData(null);
     setProcessingStep("idle");
     setResults(null);
+    setMarkdownResults(null);
     setError(null);
   };
 
@@ -194,6 +282,7 @@ export default function Home() {
     setAudioData(null);
     setProcessingStep("idle");
     setResults(null);
+    setMarkdownResults(null);
     setError(null);
     setSessionState({
       tasks: [],
@@ -201,6 +290,7 @@ export default function Home() {
       notes: [],
       transcripts: [],
     });
+    setMarkdownDocument("");
     setRecordingCount(0);
   };
 
@@ -239,15 +329,51 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Output Mode Toggle */}
+        <div className="flex justify-center gap-4 mb-6">
+          <button
+            onClick={() => {
+              setOutputMode("json");
+              resetSession();
+            }}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border-2 text-sm ${
+              outputMode === "json"
+                ? "bg-blue-600 text-white border-blue-500"
+                : "bg-white/10 text-blue-200 border-blue-400/50 hover:bg-white/20 hover:border-blue-400"
+            }`}
+          >
+            📋 JSON Mode (Tasks/Events/Notes)
+          </button>
+          <button
+            onClick={() => {
+              setOutputMode("markdown");
+              resetSession();
+            }}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all border-2 text-sm ${
+              outputMode === "markdown"
+                ? "bg-green-600 text-white border-green-500"
+                : "bg-white/10 text-green-200 border-green-400/50 hover:bg-white/20 hover:border-green-400"
+            }`}
+          >
+            📝 Markdown Mode (Document)
+          </button>
+        </div>
+
         {/* Main Content */}
         {processingStep === "idle" || processingStep === "error" ? (
           <div className="space-y-6">
             {/* Active Session Indicator */}
             {recordingCount > 0 && (
               <div className="bg-purple-500/20 border border-purple-400/50 rounded-xl p-4 text-center">
-                <p className="text-purple-100 font-semibold">
-                  📊 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
-                </p>
+                {outputMode === "json" ? (
+                  <p className="text-purple-100 font-semibold">
+                    📊 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                  </p>
+                ) : (
+                  <p className="text-purple-100 font-semibold">
+                    📝 Active Session: {recordingCount} recording{recordingCount !== 1 ? 's' : ''} • {markdownDocument.length} characters
+                  </p>
+                )}
                 <button
                   onClick={resetSession}
                   className="mt-2 text-sm text-purple-300 hover:text-purple-200 underline"
@@ -388,7 +514,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        ) : processingStep === "complete" && results ? (
+        ) : processingStep === "complete" && (results || markdownResults) ? (
           <div className="space-y-6">
             {/* Session Info & Success Message */}
             <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-6 text-center">
@@ -401,21 +527,35 @@ export default function Home() {
               </p>
               {recordingCount > 0 && (
                 <div className="inline-block px-4 py-2 bg-purple-500/30 rounded-lg border border-purple-400/50">
-                  <p className="text-sm text-purple-100">
-                    Session Recording #{recordingCount} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
-                  </p>
+                  {outputMode === "json" && results ? (
+                    <p className="text-sm text-purple-100">
+                      Session Recording #{recordingCount} • {sessionState.tasks.length} tasks • {sessionState.events.length} events • {sessionState.notes.length} notes
+                    </p>
+                  ) : (
+                    <p className="text-sm text-purple-100">
+                      Session Recording #{recordingCount} • {markdownDocument.length} characters
+                    </p>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Results */}
-            <ResultsDisplay
-              transcript={results.transcript}
-              tasks={results.tasks}
-              events={results.events}
-              notes={results.notes}
-              storageInfo={results.storageInfo}
-            />
+            {outputMode === "json" && results ? (
+              <ResultsDisplay
+                transcript={results.transcript}
+                tasks={results.tasks}
+                events={results.events}
+                notes={results.notes}
+                storageInfo={results.storageInfo}
+              />
+            ) : markdownResults ? (
+              <MarkdownDisplay
+                markdown={markdownResults.markdown}
+                transcript={markdownResults.transcript}
+                storageInfo={markdownResults.storageInfo}
+              />
+            ) : null}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
