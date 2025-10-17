@@ -46,9 +46,47 @@ export default function Home() {
     setError(null);
   };
 
-  const handleRecordingComplete = (data: string, mimeType: string) => {
+  const handleRecordingComplete = async (data: string, mimeType: string) => {
     setAudioData({ data, mimeType, fileName: "recording.webm" });
     setError(null);
+
+    // Auto-submit for processing
+    setProcessingStep("transcribing");
+
+    try {
+      const response = await fetch("/api/process-audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audioData: data,
+          mimeType: mimeType,
+          fileName: "recording.webm",
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || "Processing failed");
+      }
+
+      // Simulate step progression for UX
+      setProcessingStep("extracting");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setProcessingStep("saving");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setProcessingStep("creating");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      setProcessingStep("complete");
+      setResults(responseData);
+    } catch (err: any) {
+      console.error("Processing error:", err);
+      setError(err.message || "An error occurred while processing the audio");
+      setProcessingStep("error");
+    }
   };
 
   const processAudio = async () => {

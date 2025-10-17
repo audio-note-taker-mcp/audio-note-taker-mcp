@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { getTaskExtractionPrompt } from "./prompts/task-extraction";
 
 // Initialize clients
 const deepgram = process.env.DEEPGRAM_API_KEY
@@ -77,41 +78,7 @@ export async function extractTasks(transcript: string, context?: string) {
   }
 
   try {
-    const systemPrompt = `You are an AI assistant that extracts actionable items from voice note transcripts.
-
-Analyze the transcript and extract:
-1. **Tasks**: Action items with optional due dates and priority
-2. **Events**: Calendar events with dates and times
-3. **Notes**: General information or ideas
-
-Return ONLY valid JSON in this exact format:
-{
-  "tasks": [
-    {
-      "title": "string",
-      "description": "string",
-      "due_date": "YYYY-MM-DD or null",
-      "priority": "low|medium|high"
-    }
-  ],
-  "events": [
-    {
-      "title": "string",
-      "date": "YYYY-MM-DD",
-      "time": "HH:MM or null",
-      "description": "string"
-    }
-  ],
-  "notes": [
-    {
-      "content": "string",
-      "category": "string or null"
-    }
-  ]
-}
-
-Today's date is ${new Date().toISOString().split("T")[0]}.
-${context ? `\nContext: ${context}` : ""}`;
+    const systemPrompt = getTaskExtractionPrompt(context);
 
     const message = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",

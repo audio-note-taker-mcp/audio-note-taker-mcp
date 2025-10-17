@@ -1,10 +1,16 @@
 "use client";
 
+interface Subtask {
+  title: string;
+  completed?: boolean;
+}
+
 interface Task {
   title: string;
   description?: string;
   due_date?: string;
   priority: "low" | "medium" | "high";
+  subtasks?: Subtask[];
 }
 
 interface Event {
@@ -53,12 +59,23 @@ export default function ResultsDisplay({
   };
 
   const copyToClipboard = () => {
+    const tasksText = tasks.map((t, i) => {
+      let taskStr = `${i + 1}. ${t.title}${t.due_date ? ` (Due: ${t.due_date})` : ""} [${t.priority}]`;
+      if (t.subtasks && t.subtasks.length > 0) {
+        const subtasksStr = t.subtasks.map((st, si) =>
+          `   ${si + 1}. ${st.completed ? "✓" : "○"} ${st.title}`
+        ).join("\n");
+        taskStr += "\n" + subtasksStr;
+      }
+      return taskStr;
+    }).join("\n");
+
     const text = `
 TRANSCRIPT:
 ${transcript}
 
 TASKS (${tasks.length}):
-${tasks.map((t, i) => `${i + 1}. ${t.title}${t.due_date ? ` (Due: ${t.due_date})` : ""} [${t.priority}]`).join("\n")}
+${tasksText}
 
 EVENTS (${events.length}):
 ${events.map((e, i) => `${i + 1}. ${e.title} - ${e.date}${e.time ? ` @ ${e.time}` : ""}`).join("\n")}
@@ -112,7 +129,7 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
                     {task.description && (
                       <p className="text-sm text-purple-200 mb-2">{task.description}</p>
                     )}
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
                       <span
                         className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(
                           task.priority
@@ -126,6 +143,30 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
                         </span>
                       )}
                     </div>
+
+                    {/* Subtasks */}
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs text-purple-300 font-semibold uppercase tracking-wide">
+                          Subtasks ({task.subtasks.length})
+                        </p>
+                        <div className="space-y-1.5">
+                          {task.subtasks.map((subtask, subIndex) => (
+                            <div
+                              key={subIndex}
+                              className="flex items-start gap-2 text-sm text-purple-200 bg-white/5 rounded px-3 py-2"
+                            >
+                              <span className="text-purple-400 mt-0.5">
+                                {subtask.completed ? "✓" : "○"}
+                              </span>
+                              <span className={subtask.completed ? "line-through opacity-60" : ""}>
+                                {subtask.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
