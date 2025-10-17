@@ -56,7 +56,7 @@ export default function MicrophoneDropdown({
               {selected ? selected.label : "Select Microphone"}
             </span>
           </Listbox.Button>
-          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 bg-white/10 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-10">
+          <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 bg-white/10 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm z-10 text-white">
             {microphones.length === 0 && (
               <div className="text-gray-500 px-4 py-2">
                 No microphones found
@@ -68,7 +68,7 @@ export default function MicrophoneDropdown({
                 value={mic}
                 className={({ active }) =>
                   `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                    active ? "bg-teal-100 text-teal-900" : "text-gray-900"
+                    active ? "bg-teal-800 text-white" : "text-white"
                   }`
                 }
               >
