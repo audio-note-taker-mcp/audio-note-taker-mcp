@@ -1,5 +1,7 @@
 "use client";
 
+import DebugObject from "./DebugObject";
+
 interface Subtask {
   title: string;
   completed?: boolean;
@@ -174,6 +176,12 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
           </div>
         </div>
       )}
+
+      {/* Debug Object */}
+      <DebugObject
+        data={{ transcript, tasks, events, notes, storageInfo }}
+        title="Raw Response Data"
+      />
 
       {/* Events */}
       {events.length > 0 && (
