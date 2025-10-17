@@ -9,10 +9,16 @@ applications:
             - nvm use 20
             - corepack enable
             - corepack prepare pnpm@8.15.7 --activate
+            - pnpm --version
             - pnpm install --frozen-lockfile
         build:
           commands:
-            - pnpm build
+            # Disable telemetry to keep logs clean; runs your "build": "next build" script
+            - NEXT_TELEMETRY_DISABLED=1 pnpm run build
+        postBuild:
+          commands:
+            - echo "Build finished. Contents of .next:"
+            - ls -la .next || true
       artifacts:
         baseDirectory: .next
         files:
