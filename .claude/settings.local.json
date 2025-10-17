@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(test:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(xargs cat:*)",
+      "Bash(find:*)",
+      "Bash(awk:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
