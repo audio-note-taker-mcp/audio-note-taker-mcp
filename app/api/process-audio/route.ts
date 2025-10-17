@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     console.log(`   - Events with links: ${calendarLinks.length}`);
 
     const totalDuration = Date.now() - startTime;
-    console.log(`\n${"=".repeat(80)}`);
+    console.log("\n" + "=".repeat(80));
     console.log(`🎉 [${requestId}] PROCESSING COMPLETE!`);
     console.log(`   ⏱️  Total Time: ${totalDuration}ms`);
     console.log(`   📊 Breakdown:`);
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (isS3) {
       console.log(`   🌩️  S3 Upload: SUCCESS ✓`);
     }
-    console.log(${"=".repeat(80)} + "\n");
+    console.log("=".repeat(80) + "\n");
 
     // Return consolidated results
     return NextResponse.json({
@@ -146,11 +146,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     const errorDuration = Date.now() - startTime;
-    console.log(`\n${"=".repeat(80)}`);
+    console.log("\n" + "=".repeat(80));
     console.error(`❌ [${requestId}] ERROR PROCESSING AUDIO (${errorDuration}ms)`);
     console.error(`   Message: ${error.message}`);
     console.error(`   Stack: ${error.stack}`);
-    console.log(${"=".repeat(80)} + "\n");
+    console.log("=".repeat(80) + "\n");
 
     return NextResponse.json(
       {
