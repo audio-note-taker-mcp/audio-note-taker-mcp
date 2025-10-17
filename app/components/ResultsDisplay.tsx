@@ -61,16 +61,23 @@ export default function ResultsDisplay({
   };
 
   const copyToClipboard = () => {
-    const tasksText = tasks.map((t, i) => {
-      let taskStr = `${i + 1}. ${t.title}${t.due_date ? ` (Due: ${t.due_date})` : ""} [${t.priority}]`;
-      if (t.subtasks && t.subtasks.length > 0) {
-        const subtasksStr = t.subtasks.map((st, si) =>
-          `   ${si + 1}. ${st.completed ? "✓" : "○"} ${st.title}`
-        ).join("\n");
-        taskStr += "\n" + subtasksStr;
-      }
-      return taskStr;
-    }).join("\n");
+    const tasksText = tasks
+      .map((t, i) => {
+        let taskStr = `${i + 1}. ${t.title}${
+          t.due_date ? ` (Due: ${t.due_date})` : ""
+        } [${t.priority}]`;
+        if (t.subtasks && t.subtasks.length > 0) {
+          const subtasksStr = t.subtasks
+            .map(
+              (st, si) =>
+                `   ${si + 1}. ${st.completed ? "✓" : "○"} ${st.title}`
+            )
+            .join("\n");
+          taskStr += "\n" + subtasksStr;
+        }
+        return taskStr;
+      })
+      .join("\n");
 
     const text = `
 TRANSCRIPT:
@@ -80,10 +87,18 @@ TASKS (${tasks.length}):
 ${tasksText}
 
 EVENTS (${events.length}):
-${events.map((e, i) => `${i + 1}. ${e.title} - ${e.date}${e.time ? ` @ ${e.time}` : ""}`).join("\n")}
+${events
+  .map(
+    (e, i) => `${i + 1}. ${e.title} - ${e.date}${e.time ? ` @ ${e.time}` : ""}`
+  )
+  .join("\n")}
 
 NOTES (${notes.length}):
-${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` : ""}`).join("\n")}
+${notes
+  .map(
+    (n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` : ""}`
+  )
+  .join("\n")}
     `.trim();
 
     navigator.clipboard.writeText(text);
@@ -92,7 +107,9 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
 
   const downloadJSON = () => {
     const data = { transcript, tasks, events, notes, storageInfo };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -104,32 +121,38 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
   return (
     <div className="space-y-6">
       {/* Transcript */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-300/30">
+      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-teal-300/30">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">📝</span>
           <h2 className="text-xl font-bold text-white">Transcript</h2>
         </div>
-        <p className="text-purple-100 leading-relaxed">{transcript}</p>
+        <p className="text-teal-100 leading-relaxed">{transcript}</p>
       </div>
 
       {/* Tasks */}
       {tasks.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-300/30">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-teal-300/30">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">✅</span>
-            <h2 className="text-xl font-bold text-white">Tasks ({tasks.length})</h2>
+            <h2 className="text-xl font-bold text-white">
+              Tasks ({tasks.length})
+            </h2>
           </div>
           <div className="space-y-3">
             {tasks.map((task, index) => (
               <div
                 key={index}
-                className="bg-white/5 rounded-lg p-4 border border-purple-300/20 hover:bg-white/10 transition-colors"
+                className="bg-white/5 rounded-lg p-4 border border-teal-300/20 hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-white mb-1">{task.title}</h3>
+                    <h3 className="font-semibold text-white mb-1">
+                      {task.title}
+                    </h3>
                     {task.description && (
-                      <p className="text-sm text-purple-200 mb-2">{task.description}</p>
+                      <p className="text-sm text-teal-200 mb-2">
+                        {task.description}
+                      </p>
                     )}
                     <div className="flex items-center gap-2 flex-wrap mb-3">
                       <span
@@ -149,19 +172,25 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
                     {/* Subtasks */}
                     {task.subtasks && task.subtasks.length > 0 && (
                       <div className="mt-3 space-y-2">
-                        <p className="text-xs text-purple-300 font-semibold uppercase tracking-wide">
+                        <p className="text-xs text-teal-300 font-semibold uppercase tracking-wide">
                           Subtasks ({task.subtasks.length})
                         </p>
                         <div className="space-y-1.5">
                           {task.subtasks.map((subtask, subIndex) => (
                             <div
                               key={subIndex}
-                              className="flex items-start gap-2 text-sm text-purple-200 bg-white/5 rounded px-3 py-2"
+                              className="flex items-start gap-2 text-sm text-teal-200 bg-white/5 rounded px-3 py-2"
                             >
-                              <span className="text-purple-400 mt-0.5">
+                              <span className="text-teal-400 mt-0.5">
                                 {subtask.completed ? "✓" : "○"}
                               </span>
-                              <span className={subtask.completed ? "line-through opacity-60" : ""}>
+                              <span
+                                className={
+                                  subtask.completed
+                                    ? "line-through opacity-60"
+                                    : ""
+                                }
+                              >
                                 {subtask.title}
                               </span>
                             </div>
@@ -185,26 +214,32 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
 
       {/* Events */}
       {events.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-300/30">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-teal-300/30">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">📅</span>
-            <h2 className="text-xl font-bold text-white">Events ({events.length})</h2>
+            <h2 className="text-xl font-bold text-white">
+              Events ({events.length})
+            </h2>
           </div>
           <div className="space-y-3">
             {events.map((event, index) => (
               <div
                 key={index}
-                className="bg-white/5 rounded-lg p-4 border border-purple-300/20 hover:bg-white/10 transition-colors"
+                className="bg-white/5 rounded-lg p-4 border border-teal-300/20 hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-white mb-1">{event.title}</h3>
-                    <p className="text-sm text-purple-200 mb-2">
+                    <h3 className="font-semibold text-white mb-1">
+                      {event.title}
+                    </h3>
+                    <p className="text-sm text-teal-200 mb-2">
                       {event.date}
                       {event.time && ` @ ${event.time}`}
                     </p>
                     {event.description && (
-                      <p className="text-sm text-purple-300 mb-3">{event.description}</p>
+                      <p className="text-sm text-teal-300 mb-3">
+                        {event.description}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -213,9 +248,14 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
                     href={event.calendar_link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg text-sm font-medium text-white transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -234,20 +274,22 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
 
       {/* Notes */}
       {notes.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-300/30">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-teal-300/30">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">📓</span>
-            <h2 className="text-xl font-bold text-white">Notes ({notes.length})</h2>
+            <h2 className="text-xl font-bold text-white">
+              Notes ({notes.length})
+            </h2>
           </div>
           <div className="space-y-3">
             {notes.map((note, index) => (
               <div
                 key={index}
-                className="bg-white/5 rounded-lg p-4 border border-purple-300/20 hover:bg-white/10 transition-colors"
+                className="bg-white/5 rounded-lg p-4 border border-teal-300/20 hover:bg-white/10 transition-colors"
               >
-                <p className="text-purple-100 mb-2">{note.content}</p>
+                <p className="text-teal-100 mb-2">{note.content}</p>
                 {note.category && (
-                  <span className="inline-block px-2 py-1 rounded text-xs bg-purple-500/20 text-purple-200 border border-purple-500/50">
+                  <span className="inline-block px-2 py-1 rounded text-xs bg-teal-500/20 text-teal-200 border border-teal-500/50">
                     {note.category}
                   </span>
                 )}
@@ -259,21 +301,23 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
 
       {/* Storage Info */}
       {storageInfo && (
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-300/30">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-teal-300/30">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">💾</span>
             <h2 className="text-xl font-bold text-white">Storage</h2>
           </div>
           <div className="space-y-2 text-sm">
-            <p className="text-purple-200">
-              <span className="font-semibold">Note ID:</span> {storageInfo.note_id}
+            <p className="text-teal-200">
+              <span className="font-semibold">Note ID:</span>{" "}
+              {storageInfo.note_id}
             </p>
-            <p className="text-purple-200">
+            <p className="text-teal-200">
               <span className="font-semibold">Saved:</span>{" "}
               {new Date(storageInfo.created_at).toLocaleString()}
             </p>
-            <p className="text-purple-200 break-all">
-              <span className="font-semibold">Location:</span> {storageInfo.storage_url}
+            <p className="text-teal-200 break-all">
+              <span className="font-semibold">Location:</span>{" "}
+              {storageInfo.storage_url}
             </p>
           </div>
         </div>
@@ -283,9 +327,14 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
       <div className="flex gap-4 justify-center">
         <button
           onClick={copyToClipboard}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-white transition-colors flex items-center gap-2"
+          className="px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg font-semibold text-white transition-colors flex items-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -297,9 +346,14 @@ ${notes.map((n, i) => `${i + 1}. ${n.content}${n.category ? ` (${n.category})` :
         </button>
         <button
           onClick={downloadJSON}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-white transition-colors flex items-center gap-2"
+          className="px-6 py-3 bg-teal-600 hover:bg-teal-700 rounded-lg font-semibold text-white transition-colors flex items-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

@@ -7,7 +7,10 @@ interface AudioRecorderProps {
   disabled?: boolean;
 }
 
-export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRecorderProps) {
+export default function AudioRecorder({
+  onRecordingComplete,
+  disabled,
+}: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioURL, setAudioURL] = useState<string | null>(null);
@@ -29,7 +32,9 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        const blob = new Blob(chunksRef.current, {
+          type: mediaRecorder.mimeType,
+        });
         const url = URL.createObjectURL(blob);
         setAudioURL(url);
 
@@ -78,7 +83,7 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-xl border border-purple-300/50">
+      <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-xl border border-teal-300/50">
         {!isRecording && !audioURL && (
           <button
             onClick={startRecording}
@@ -89,12 +94,16 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
               ${
                 disabled
                   ? "bg-gray-600 cursor-not-allowed opacity-50"
-                  : "bg-purple-600 hover:bg-purple-700 active:scale-95"
+                  : "bg-teal-600 hover:bg-teal-700 active:scale-95"
               }
             `}
           >
             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
               </svg>
@@ -106,14 +115,20 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
         {isRecording && (
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center animate-pulse">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
               </svg>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-mono text-white mb-2">{formatTime(recordingTime)}</p>
-              <p className="text-sm text-purple-200">Recording...</p>
+              <p className="text-2xl font-mono text-white mb-2">
+                {formatTime(recordingTime)}
+              </p>
+              <p className="text-sm text-teal-200">Recording...</p>
             </div>
             <button
               onClick={stopRecording}
@@ -127,8 +142,18 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
         {audioURL && !isRecording && (
           <div className="flex flex-col items-center gap-4 w-full">
             <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <p className="text-white font-semibold">Recording Complete!</p>
@@ -138,7 +163,7 @@ export default function AudioRecorder({ onRecordingComplete, disabled }: AudioRe
                 setAudioURL(null);
                 setRecordingTime(0);
               }}
-              className="text-sm text-purple-300 hover:text-purple-200 underline"
+              className="text-sm text-teal-300 hover:text-teal-200 underline"
             >
               Record Again
             </button>

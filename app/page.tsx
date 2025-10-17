@@ -287,17 +287,17 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900">
       <div className="max-w-5xl mx-auto ">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Jott.AI
           </h1>
-          <p className="text-lg md:text-xl text-purple-200 mb-2">
+          <p className="text-lg md:text-xl text-teal-200 mb-2">
             AI-powered voice notes that transform into actionable tasks
           </p>
-          <p className="text-sm text-purple-300">
+          <p className="text-sm text-teal-300">
             Powered by MCP, Claude AI, and Deepgram
           </p>
         </div>
@@ -337,9 +337,9 @@ export default function Home() {
           <div className="space-y-6">
             {/* Active Session Indicator */}
             {recordingCount > 0 && (
-              <div className="bg-purple-500/20 border border-purple-400/50 rounded-xl p-4 text-center">
+              <div className="bg-teal-500/20 border border-teal-400/50 rounded-xl p-4 text-center">
                 {outputMode === "json" ? (
-                  <p className="text-purple-100 font-semibold">
+                  <p className="text-teal-100 font-semibold">
                     📊 Active Session: {recordingCount} recording
                     {recordingCount !== 1 ? "s" : ""} •{" "}
                     {sessionState.tasks.length} tasks •{" "}
@@ -347,7 +347,7 @@ export default function Home() {
                     {sessionState.notes.length} notes
                   </p>
                 ) : (
-                  <p className="text-purple-100 font-semibold">
+                  <p className="text-teal-100 font-semibold">
                     📝 Active Session: {recordingCount} recording
                     {recordingCount !== 1 ? "s" : ""} •{" "}
                     {markdownDocument.length} characters
@@ -355,7 +355,7 @@ export default function Home() {
                 )}
                 <button
                   onClick={resetSession}
-                  className="mt-2 text-sm text-purple-300 hover:text-purple-200 underline"
+                  className="mt-2 text-sm text-teal-300 hover:text-teal-200 underline"
                 >
                   Reset Session
                 </button>
@@ -368,8 +368,8 @@ export default function Home() {
                 onClick={() => setInputMethod("upload")}
                 className={`px-8 py-3 rounded-lg font-semibold transition-all border-2 ${
                   inputMethod === "upload"
-                    ? "bg-purple-600 text-white border-purple-500"
-                    : "bg-white/10 text-purple-200 border-purple-400/50 hover:bg-white/20 hover:border-purple-400"
+                    ? "bg-teal-600 text-white border-teal-500"
+                    : "bg-white/10 text-teal-200 border-teal-400/50 hover:bg-white/20 hover:border-teal-400"
                 }`}
               >
                 Upload File
@@ -378,8 +378,8 @@ export default function Home() {
                 onClick={() => setInputMethod("record")}
                 className={`px-8 py-3 rounded-lg font-semibold transition-all border-2 ${
                   inputMethod === "record"
-                    ? "bg-purple-600 text-white border-purple-500"
-                    : "bg-white/10 text-purple-200 border-purple-400/50 hover:bg-white/20 hover:border-purple-400"
+                    ? "bg-teal-600 text-white border-teal-500"
+                    : "bg-white/10 text-teal-200 border-teal-400/50 hover:bg-white/20 hover:border-teal-400"
                 }`}
               >
                 Record Audio
@@ -387,7 +387,7 @@ export default function Home() {
             </div>
 
             {/* Input Component */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 border border-purple-300/30">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 border border-teal-300/30">
               {inputMethod === "upload" ? (
                 <FileUploader
                   onFileSelect={handleFileSelect}
@@ -420,7 +420,7 @@ export default function Home() {
               <div className="text-center">
                 <button
                   onClick={processAudio}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                  className="px-8 py-4 bg-gradient-to-r from-teal-600 to-pink-600 hover:from-teal-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                 >
                   Process Audio with AI
                 </button>
@@ -429,64 +429,64 @@ export default function Home() {
 
             {/* Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-purple-300/20">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-teal-300/20">
                 <div className="text-3xl mb-2">🎤</div>
                 <h3 className="font-semibold text-white mb-1">1. Capture</h3>
-                <p className="text-sm text-purple-200">
+                <p className="text-sm text-teal-200">
                   Record or upload your audio note
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-purple-300/20">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-teal-300/20">
                 <div className="text-3xl mb-2">🤖</div>
                 <h3 className="font-semibold text-white mb-1">2. Process</h3>
-                <p className="text-sm text-purple-200">
+                <p className="text-sm text-teal-200">
                   AI extracts tasks, events, and notes
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-purple-300/20">
+              <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-teal-300/20">
                 <div className="text-3xl mb-2">✅</div>
                 <h3 className="font-semibold text-white mb-1">3. Organize</h3>
-                <p className="text-sm text-purple-200">
+                <p className="text-sm text-teal-200">
                   Get structured, actionable results
                 </p>
               </div>
             </div>
 
             {/* MCP Tools Info */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 border border-purple-300/30">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8 border border-teal-300/30">
               <h2 className="text-2xl font-bold text-white mb-4">
                 MCP Tools Chain
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-purple-500/20 rounded-lg p-4 border border-purple-500/30">
+                <div className="bg-teal-500/20 rounded-lg p-4 border border-teal-500/30">
                   <h3 className="font-semibold text-white mb-2">
                     1. transcribe_audio
                   </h3>
-                  <p className="text-sm text-purple-200">
+                  <p className="text-sm text-teal-200">
                     Deepgram speech-to-text transcription
                   </p>
                 </div>
-                <div className="bg-purple-500/20 rounded-lg p-4 border border-purple-500/30">
+                <div className="bg-teal-500/20 rounded-lg p-4 border border-teal-500/30">
                   <h3 className="font-semibold text-white mb-2">
                     2. extract_tasks
                   </h3>
-                  <p className="text-sm text-purple-200">
+                  <p className="text-sm text-teal-200">
                     Claude AI extracts structured data
                   </p>
                 </div>
-                <div className="bg-purple-500/20 rounded-lg p-4 border border-purple-500/30">
+                <div className="bg-teal-500/20 rounded-lg p-4 border border-teal-500/30">
                   <h3 className="font-semibold text-white mb-2">
                     3. save_note
                   </h3>
-                  <p className="text-sm text-purple-200">
+                  <p className="text-sm text-teal-200">
                     Persists to S3 or local storage
                   </p>
                 </div>
-                <div className="bg-purple-500/20 rounded-lg p-4 border border-purple-500/30">
+                <div className="bg-teal-500/20 rounded-lg p-4 border border-teal-500/30">
                   <h3 className="font-semibold text-white mb-2">
                     4. create_calendar_event
                   </h3>
-                  <p className="text-sm text-purple-200">
+                  <p className="text-sm text-teal-200">
                     Generates Google Calendar links
                   </p>
                 </div>
@@ -505,16 +505,16 @@ export default function Home() {
                 Your audio note has been processed and saved
               </p>
               {recordingCount > 0 && (
-                <div className="inline-block px-4 py-2 bg-purple-500/30 rounded-lg border border-purple-400/50">
+                <div className="inline-block px-4 py-2 bg-teal-500/30 rounded-lg border border-teal-400/50">
                   {outputMode === "json" && results ? (
-                    <p className="text-sm text-purple-100">
+                    <p className="text-sm text-teal-100">
                       Session Recording #{recordingCount} •{" "}
                       {sessionState.tasks.length} tasks •{" "}
                       {sessionState.events.length} events •{" "}
                       {sessionState.notes.length} notes
                     </p>
                   ) : (
-                    <p className="text-sm text-purple-100">
+                    <p className="text-sm text-teal-100">
                       Session Recording #{recordingCount} •{" "}
                       {markdownDocument.length} characters
                     </p>
@@ -544,13 +544,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={continueRecording}
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                className="px-8 py-4 bg-gradient-to-r from-teal-600 to-pink-600 hover:from-teal-700 hover:to-pink-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
               >
                 ➕ Add Another Recording
               </button>
               <button
                 onClick={resetSession}
-                className="px-8 py-4 bg-white/10 hover:bg-white/20 border-2 border-purple-400/50 hover:border-purple-400 text-white font-semibold text-lg rounded-xl transition-all"
+                className="px-8 py-4 bg-white/10 hover:bg-white/20 border-2 border-teal-400/50 hover:border-teal-400 text-white font-semibold text-lg rounded-xl transition-all"
               >
                 🔄 Start New Session
               </button>
@@ -558,12 +558,12 @@ export default function Home() {
           </div>
         ) : (
           // Processing State
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 border border-purple-300/30 text-center">
-            <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-purple-400 mx-auto mb-6"></div>
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 border border-teal-300/30 text-center">
+            <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-teal-400 mx-auto mb-6"></div>
             <h2 className="text-2xl font-bold text-white mb-2">
               {getStepMessage()}
             </h2>
-            <p className="text-purple-200">
+            <p className="text-teal-200">
               Please wait while we process your audio...
             </p>
 
@@ -580,7 +580,7 @@ export default function Home() {
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center ${
                         processingStep === step
-                          ? "bg-purple-500 animate-pulse"
+                          ? "bg-teal-500 animate-pulse"
                           : [
                               "transcribing",
                               "extracting",
@@ -628,7 +628,7 @@ export default function Home() {
                       className={`text-sm ${
                         processingStep === step
                           ? "text-white font-semibold"
-                          : "text-purple-300"
+                          : "text-teal-300"
                       }`}
                     >
                       {label}
@@ -641,14 +641,14 @@ export default function Home() {
         )}
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-purple-300">
+        <div className="mt-12 text-center text-sm text-teal-300">
           <p>
             Built with{" "}
             <a
               href="https://modelcontextprotocol.io/"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-purple-200"
+              className="underline hover:text-teal-200"
             >
               MCP
             </a>
@@ -657,7 +657,7 @@ export default function Home() {
               href="https://anthropic.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-purple-200"
+              className="underline hover:text-teal-200"
             >
               Claude AI
             </a>
@@ -666,7 +666,7 @@ export default function Home() {
               href="https://deepgram.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-purple-200"
+              className="underline hover:text-teal-200"
             >
               Deepgram
             </a>
